@@ -1,0 +1,89 @@
+#importando Bibliotecas
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
+
+from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
+
+from operator import index
+#importando CSV
+df_fakebills = pd.read_csv('fake_bills_unsuperv.csv', index_col=0)
+df_fakebills.head()
+
+#função calculo de inercia e grafico cotovelo
+def calc_inercias(X, lista_k):
+
+    lista_wcss = []
+
+    for k in lista_k:
+        # Treina o k-means para cada valor de K
+        kmeans = KMeans(n_clusters=k).fit(X)
+      # Cria lista com as inércias
+        lista_wcss.append(kmeans.inertia_)
+
+    return lista_wcss
+
+
+def plot_cotovelo(lista_k, lista_wcss):
+    plt.figure(figsize=(10, 5))
+
+    plt.title("Método do cotovelo")
+
+    plt.plot(lista_k, lista_wcss, marker="o")
+    plt.grid()
+
+    plt.xlabel("# de clusters")
+    plt.ylabel("Inércia (WCSS)")
+
+    plt.show()
+    
+    lista_k = range(1, 10)
+lista_inercias = calc_inercias(df_fakebills, lista_k)
+
+plot_cotovelo(lista_k, lista_inercias)
+
+#numero clusters
+
+kmeans_md = KMeans(n_clusters=2)
+kmeans_md.fit(df_fakebills)
+
+result_kmeans = df_fakebills.copy()
+result_kmeans['label'] = kmeans_md.labels_
+
+result_kmeans['label'].value_counts()
+
+#visualizando dados clusterizados
+
+fig, ax = plt.subplots(figsize=(20, 50))
+
+plt.suptitle("Visualização de Dispersão dos dados em Clusters - KMeans", fontsize=22, fontweight=600)
+
+linhas = 10
+colunas = 2
+posicao = 1
+
+col_name = df_fakebills.columns
+
+for i in range(len(col_name)):
+    for j in range(i + 1, len(col_name)):
+        plt.subplot(linhas, colunas, posicao)
+        plt.title(f"Correlação entre {col_name[i]} e {col_name[j]}",
+                                      loc="center", fontsize=14,
+                                      fontweight=200)
+        sns.scatterplot(data=result_kmeans, x= col_name[j],
+                        y=col_name[i], hue='label')
+        posicao += 1
+
+plt.subplots_adjust(top=0.95, hspace=0.3)
+plt.show()
+
+#resultado final
+
+plt.suptitle("Visualização dos dados clusterizados")
+plt.title("Via KMeans")
+sns.scatterplot(data=result_kmeans, x='length', y='margin_low', hue='label')
+plt.show()
